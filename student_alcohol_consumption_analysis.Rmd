@@ -1,0 +1,1095 @@
+---
+title: "Student Alcohol Consumption and Performance Analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This report has been collected from two secondary schools, and from two classes, a math class and a Portuguese language class.The factors presented in the data set are social factors and will hopefully provide in depth analysis into teen alcohol consumption. 
+
+## Problem Statement
+
+
+With this information we will be able to determine if alcohol consumption is an issue for the students in this secondary school, and what relationship social factors have on consumption of alcohol. We assume the below questions will help identify a relationship between alcohol consumption, student performance, free time, interest in attending a university, and factors based on family cohabitation status and health status. Finding a relationship between these factors will allow us to predict the likelihood of a student consuming alcohol.Also, we will compare key differences in alcohol consumption between the math and language class. 
+
+
+```{r}
+# Please install packages if not in library  
+library(ggplot2)
+library(plyr)
+library(grid)
+library(gridExtra)
+library(dplyr)
+library(skimr)
+library(tidyr)
+```
+
+```{r}
+# Read student-mat.csv, student-por.csv store it in dataframe and merge them into single dataframe
+mat_students = read.csv("student-mat.csv")
+por_students = read.csv("student-por.csv")
+
+# Merge math and Portuguese class together into one data-frame
+mat_por_students = rbind(mat_students, por_students)
+```
+
+
+```{r}
+# Check and omit missing data and omit them
+if (sum(is.na(mat_por_students)) != 0) {
+  mat_por_students <- na.omit(mat_por_students)
+}
+sum(is.na(mat_por_students))
+```
+
+## Data exploration.
+
+##### Will be using dim function to get dimension of object
+
+```{r}
+dim(mat_por_students) # dim gives dimensions of object 
+```
+The data set contains 33 variables and 1044 observations.
+
+
+##### Structure and summary of the data-frame for both classes 
+```{r}
+summary(mat_por_students)
+```
+
+
+```{r}
+skim(mat_por_students) # Skim is an alternative to summary, which provides a broad view of the dataframe.
+```
+```{r}
+str(mat_por_students)
+```
+
+### Observations:
+1. The dataset is made up of data from two Portuguese schools, Gabriel Pereira HS and Mousinho da Silveira HS and it measures their performance in Math and Portuguese class.
+2. The dataset contains detailed observations for each student on social variables including, age, gender, grade performance, freetime, family relationship status,alcohol consumption, 
+and the parent's employment status, among others.
+3. The data consists of 1044 observations and 33 variables. 17 of the variables are character values and 16 variables are numerical values. 
+
+
+#### We will look at the Mean, Median, Min, Max number of alcoholic beverages consumed during school week and weekend 
+```{r}
+mean(mat_por_students$weekday.alcohol.consumption)
+```
+```{r}
+mean(mat_por_students$weekend.alcohol.consumption)
+```
+
+```{r}
+summary(mat_por_students$weekday.alcohol.consumption)
+```
+
+```{r}
+summary(mat_por_students$weekend.alcohol.consumption)
+```
+
+### Observations
+
+1. Mean for weekday alcohol consumption is 1.4 while weekend alcohol consumption of students is 2.2. Hence, we can conclude that students drink alcohol more on weekends rather than on weekdays.
+
+
+##### Head and Tail Functions
+
+Using the "head" and "tail" functions will allow for insight in the first six rows of data (head) and the last six rows of data (tail).
+
+```{r}
+head(mat_por_students)
+```
+```{r}
+tail(mat_por_students)
+```
+#### Observations
+
+Head- The first 6 rows of data consist of mostly female students with parents who are still together, 3 of the mothers stay at home and all of the fathers work. Only 2 of the students have supplemental school support, and they all spend 2 or more hours studying a week. Additionally all 6 students want higher education, and all have at least one alcoholic beverage per week. 
+
+
+Tail- The last 6 rows of data consist 4 females all of their parents are together, in this case all of the mothers work while 5 of the fathers work and 1 stays home.
+The students in this sample have no supplemental school support, and spend 1-3 hours studying each week. All students want higher education and all consume 1 or more alcoholic beverages a week. 
+
+### Exploration of Variables
+
+##### Distribution of Gender in the Students
+
+Will use table and ggplot functions to view gender of students
+```{r}
+table(mat_por_students$gender)
+```
+##### Histogram of age and scaling by sex
+```{r}
+ggplot(aes(x =age, fill=gender) , data = mat_por_students) + geom_histogram(binwidth=.1)+ ggtitle("Age and Gender of Students")
+```
+
+
+```{r}
+gender <- as.factor(mat_por_students$gender)
+```
+Will use a boxplot to get the average age of females and males in the dataset
+
+```{r}
+plot(gender,mat_por_students$age)
+```
+
+#### Observations
+
+1.The average age of students who are both female and male in this dataset is 17, the youngest is 15 and the oldest is 21. However, there is an outlier, a male student who is 22 years of age.
+2. There are 158 more females than males in the dataset
+
+
+
+### Weekend and Weekday Alcohol Consumption
+
+Will use table to review the number of students who have 1 or more alcoholic beverages per week and on weekends.
+
+```{r}
+table(mat_por_students$weekday.alcohol.consumption)
+```
+
+```{r}
+prop.table(table(mat_por_students$weekday.alcohol.consumption))
+```
+
+#### Histogram descibing frequency of Weekly alcohol consumption of students
+```{r}
+hist(mat_por_students$weekday.alcohol.consumption, main="Number of Alcoholic Beverages Consumed on Weekdays",xlab="Students", border="blue", col="purple",ylab="Weekely alcohol frequency")
+```
+```{r}
+table(mat_por_students$weekend.alcohol.consumption)
+```
+
+```{r}
+prop.table(table(mat_por_students$weekend.alcohol.consumption))
+```
+
+```{r}
+hist(mat_por_students$weekend.alcohol.consumption, main="Number of Alcoholic Beverages Consumed on Weekends",xlab="Students", border="blue", col="yellow",ylab="Weekend alcohol frequency")
+```
+
+#### Observations
+  On weekdays: 69% or 451 students consume 1 alcoholic beverage. 18% of students consume 2 alcoholic beverages and 6% consume 3 beverages. Approximately 4% of students consume 4 or 5 alcholic beverages.
+  On weekends: 38% or 247 students consume 1 alcoholic beverage, we see an increase in consumption of 2(23%) and 3(18%) alcoholic beverages. 19% of the students consume 4-5 alcoholic beverages on weekends. 
+
+
+
+### Weekday and Weekend Alcohol Consumption by Gender
+
+We will look at the difference of alcohol consumption by gender by creating tables and bar charts for categorical variables
+
+```{r}
+table(mat_por_students$weekday.alcohol.consumption,mat_por_students$gender)
+```
+
+```{r}
+table(mat_por_students$weekend.alcohol.consumption,mat_por_students$gender)
+```
+
+
+```{r}
+ggplot(aes(x =weekday.alcohol.consumption, fill=gender) , data = mat_por_students) + geom_histogram(binwidth=.1)+ ggtitle("Weekday Alcohol Consumption by Gender")
+```
+
+
+```{r}
+ggplot(aes(x =weekend.alcohol.consumption, fill=gender) , data = mat_por_students) + geom_histogram(binwidth=.1)+ ggtitle("Weekend Alcohol Consumption by Gender")
+```
+
+#### Observations:
+
+There are 117 more females than males in the Portuguese language class, however we see that more males consume 3 or more alcoholic beverages during the weekday.On the weekend more than double the amount of males and females consume 3 or more alcoholic beverages.
+
+
+### Analyzing family relations of students.
+
+#### Analyzing family size of students with their age
+
+We will use a pie chart to highlight the family size of students by GT3 (greater than 3) or LE3 (less than 3)
+
+```{r}
+table(mat_por_students$age,mat_por_students$family.size)
+```
+
+
+```{r}
+familytable <- table(mat_por_students$family.size)
+lbls <- paste(names(familytable), "\n", familytable, sep="")
+pie(familytable, labels = lbls, 
+   main="Pie Chart of Family Size")
+```
+
+#### Observations 
+
+70% of students have family size greater than 3 
+30% of students have family size less than 3 
+
+
+#### Analyzing family size of students with their gender
+
+The stacked bar chart will provide better insight into the gender of students and family size
+```{r}
+ggplot(aes(x = family.size), data = mat_por_students) + geom_bar(aes(fill=gender))+ ggtitle("Family Size in Relation to Gender of Students")
+```
+
+#### Observations:
+
+1. There are more Females having family size greater than 3.
+2. It can be observed that students most of the students have family size greater than 3. 
+3. It can be observed that students from age-group 16-18 have family size greater than 3. 
+4. The students who have a family size of 3 or less are equally divided male and female.
+
+
+#### Analyzing parents cohabitation status of students.
+
+We will plot parents cohabitation status with A= Apart and T= Together, along with gender to see any relation between variables
+```{r}
+ggplot(aes(x = quality.of.family.relationships) , data = mat_por_students) + geom_bar(aes(fill=gender)) + facet_wrap(~ parents.cohabitation.status)+ ggtitle("Parents Cohabitation Status and Gender")
+```
+
+
+
+#### Studytime v.s parents cohabitation center.
+
+```{r}
+ggplot(aes(x=studytime,fill=parents.cohabitation.status),data= mat_por_students) +geom_bar() +xlab('Weekly Study Time')+ scale_fill_manual(values=c( "#E69F00", "#56B4E9"))+ggtitle("Weekly Study Time and Parents Cohabitation Status")
+```
+```{r}
+table(mat_por_students$gender,mat_por_students$studytime)
+```
+
+#### Observations:
+
+1. Majority of students have parents cohabitation status of living together 
+2. Most students study 1 to 3 hours a week, with the majority of students studying 2 hours a week
+3. after checking the proportions of parents cohabitation status and study time, we find out that for students 
+whose parents live together study more as compared to those whose parents live apart.
+
+
+#Particiption in Extra- Curricular Activities
+
+We will plot if students are involved in extra curricular activities (Yes or No) and analyze the relation to students grades
+```{r}
+table(mat_por_students$extra.curricular.activities,mat_por_students$gender)
+```
+
+#### Observations:
+Out of 1044 students, only 49% of students participate in extra-curricular activities, out of which 50% are females and 50% are males.
+
+#### Analyzing extra-curricular activities w.r.t final grades of student. 
+```{r}
+ggplot(aes(x = final.grade), data = mat_por_students) + geom_bar(aes(fill=extra.curricular.activities))+ggtitle("Final Grade and Participation in Extra Curricular Activities")
+```
+
+#### Observations:
+From above graph, it seems that participation in extra curricular activities does not have any effect on the grades of the student.
+
+
+##### Distribution of students who wants to take higher education
+```{r}
+table(mat_por_students$higher.education,mat_por_students$gender)
+```
+
+#### Observations:
+It can observed that out of 1044 students, 935 students wish to take higher education, i.e almost 89% of students desire to take higher education.
+Out of which 52.8% of females and only 39% males wish to take higher education.
+
+
+##### Does address and study time impact the student decision for pursuing higher education? 
+```{r}
+ggplot(aes(x = studytime), data =mat_por_students) +
+  geom_histogram(aes(fill=gender), binwidth=0.1) + 
+  facet_wrap(higher.education ~ address)+ ggtitle("Study Time and Higher Education by Urban/Rural Area")
+```
+
+#### Observation:
+1. From above graph it can be observed that, in both the places students are willing to take higher education. 
+2. Females are more studious as compared to the males in the school.
+
+
+#### How does students who desire to take higher education perform in their school?
+```{r}
+ggplot(data=mat_por_students,aes(x=higher.education, y=final.grade))+ geom_boxplot() + facet_grid(~gender) + ggtitle("Higher education vs final grade of students")
+```
+
+#### Observations:
+
+1. It has been observed that students who intend to pursue a higher education perform better on average than those who do not.
+
+
+##### Average number of failures
+```{r}
+mean(mat_por_students$past.class.failures)
+```
+Average past failures among the students is 0.2
+
+##### Calculate Total alcohol consumption level of students
+
+```{r}
+# Total alcohol consumption  = combine weekday and weekend alcohol consumption of the students.
+mat_por_students$total_alcohol_consumption = rowSums(cbind(mat_por_students$weekday.alcohol.consumption,mat_por_students$weekend.alcohol.consumption))
+mean(mat_por_students$total_alcohol_consumption)
+```
+The average alcohol consumption level of students is 3.778
+
+##### Is there a relation between failure and alcohol consumption of students? 
+
+Covariance between the alcohol consumption and the failure of students
+
+```{r}
+cov(mat_por_students$total_alcohol_consumption,mat_por_students$past.class.failures)
+```
+
+#### Observations:
+The covariance between 2 variables is 0.16, it means it has positive relation but the correlation very weak.
+
+
+#### Boxplot to analyse the relation between the failure and alcohol consumption.
+```{r}
+# Converting factor variable to categorical variable.
+failures = factor(mat_por_students$past.class.failures,labels=c('Never Failed','Failed once',' failed twice','Failed Thrice')) 
+boxplot(total_alcohol_consumption ~ failures,summary,data=mat_por_students)
+```
+##### Does alcohol consumption have any impact on the grades by students?
+
+```{r}
+cor(mat_por_students$final.grade, mat_por_students$weekday.alcohol.consumption)
+```
+```{r}
+cor(mat_por_students$final.grade, mat_por_students$weekend.alcohol.consumption)
+```
+
+#### Observation:
+The correlations between alcohol consumption and final grades is negative, it implies that more alcohol consumption student level, decreases performance of students. But the relation is not very strong.
+
+
+
+##### What is the relationship between health and attendance of student in class?
+```{r}
+mat_por_students%>%
+  group_by(gender)%>%
+  ggplot(aes(x=factor(health.status), y=school.absences, color=gender))+
+  geom_smooth(aes(group=gender), method="lm", se=FALSE)
+```
+
+#### Observation:
+It is observed that female students have lower attendance on average and as the health scale increases, the absence decreases as expected for both male and female students.
+
+
+### Q1 ****
+
+# What are the factors affecting alcohol consumption level?
+
+#### What is average total alcohol consumption level?
+
+```{r}
+mean(mat_por_students$total_alcohol_consumption)
+```
+Total alcohol consumption level of students is 3.78
+
+#### Association of family relationships with alcohol consumption level of students
+
+```{r}
+weekday_alcohol_consumption_vs_famrel = ggplot(mat_por_students, aes(x=weekday.alcohol.consumption)) +
+  geom_density(aes(color=as.factor(quality.of.family.relationships))) +
+  ggtitle("Distribution of Students' Weekly Alchohol Consumption Level by Quality Family Relationship")
+
+weekend_alcohol_consumption_vs_famrel = ggplot(mat_por_students, aes(x=weekend.alcohol.consumption)) +
+  geom_density(aes(color=as.factor(quality.of.family.relationships))) +
+  ggtitle("Distribution of Students' Weekend Alchohol Consumption Level by Quality Family Relationship")
+
+grid.arrange(weekday_alcohol_consumption_vs_famrel, weekend_alcohol_consumption_vs_famrel)
+
+```
+
+#### Observations:
+It can be observed that a students who don't have enough good family relationship status, consume more alcohol for both in weekdays or weekends.
+
+
+#### What is the relationship between alcohol consumption level of students and their setup in which they live i.e urban v.s rural and their performance in school
+
+```{r}
+ weekday_alcohol_consumption_vs_address<-mat_por_students %>% 
+  group_by(address)%>%
+  ggplot(aes(x=factor(weekday.alcohol.consumption), y= final.grade,color=factor(weekday.alcohol.consumption)))+
+           geom_jitter(alpha=0.6)+
+    scale_x_discrete("Weekday Alcohol Consumption")+
+    scale_y_continuous("Grade")+
+    facet_grid(~address)+ ggtitle("Consumption of Alcohol based on Geographical Location")
+ weekend_alcohol_consumption_vs_address<-mat_por_students %>% 
+   group_by(address)%>%
+   ggplot(aes(x=factor(weekend.alcohol.consumption), y= final.grade,color=factor(weekend.alcohol.consumption)))+
+           geom_jitter(alpha=0.6)+
+    scale_x_discrete("Weekend Alcohol Consumption")+
+    scale_y_continuous("Grade")+
+    facet_grid(~address)
+
+grid.arrange(weekday_alcohol_consumption_vs_address,weekend_alcohol_consumption_vs_address)
+```
+
+#### Observations:
+
+We can observe from above that student living in urban areas has higher alcohol consumption rate as compared to rural areas, also performance of students gradually start decreasing as their alcohol consumption increases.
+
+
+#### Does age influence student alcohol consumption level on weekdays and weekends?
+
+```{r}
+# Convert age factor to numeric
+age = mat_por_students$age
+ageI = as.numeric(age)
+
+# Weekday alcohol consumption level vs Age
+hist(ageI, main = "Alcohol Consumption on Weekdays", xlab = "age", ylab="weekday.alcohol.consumption",border="brown", col="red")
+```
+```{r}
+hist_weekend_alchol_consumption_vs_age = hist(ageI, main = "Alcohol Consumption on Weekends", xlab = "age", ylab="weekend.alcohol.consumption",border="brown", col="pink")
+```
+If age range is considered between 15-22 yrs old, it can be observed that students from age 15-18 consume more alcohol on weekdays and weekends.
+
+
+#### Does failure rate determine student alcohol consumption?
+```{r}
+ggplot(mat_por_students, aes(x=total_alcohol_consumption, y=past.class.failures, color=gender))+
+  geom_jitter(alpha=0.9)+ theme_bw()+ xlab("Total alcohol consumption")+
+  ylab("Past Failure rate on a scale of 5")+
+  ggtitle("Total alcohol consumption vs past failure rate")
+```
+
+The past-class failure doesn't seem affecting the alcohol consumption rate of students.
+
+#### Does parent education affect the students alcohol consumption level?
+
+```{r}
+# Parents average education level w.r.t student alcohol consumption rate
+mat_por_students$parents_education = rowSums(cbind(mat_por_students$mothers.education,mat_por_students$fathers.education))
+ggplot(mat_por_students, aes(y = as.numeric(total_alcohol_consumption) , x= parents_education)) + geom_col()
+```
+
+#### Observation:
+We cannot find an exact pattern for association between alcohol consumption and parents education.
+
+
+#### Did alcohol consumption have any effect on the student performance?
+
+```{r}
+mat_por_students$weekday.alcohol.consumption.factor <- as.factor(mat_por_students$weekday.alcohol.consumption)
+mat_por_students$weekend.alcohol.consumption.factor <- as.factor(mat_por_students$weekend.alcohol.consumption)
+weekday_alcohol_consumption<-mat_por_students %>%
+  ggplot(aes(x=weekday.alcohol.consumption.factor, y=final.grade, fill= weekday.alcohol.consumption.factor))+
+  geom_boxplot()+
+  coord_flip()+
+      xlab("Work Day Alcohol consumption")+
+      ylab("Grade")+
+  facet_grid(~gender)
+weekend_alcohol_consumption<-mat_por_students %>%
+  ggplot(aes(x=weekend.alcohol.consumption.factor, y=final.grade, fill= weekend.alcohol.consumption.factor))+
+  geom_boxplot()+
+  coord_flip()+
+      xlab("Week End Alcohol consumption")+
+      ylab("Grade")+
+  facet_grid(~gender)
+grid.arrange(weekday_alcohol_consumption,weekend_alcohol_consumption)
+```
+
+#### Does weekday and weekend alcohol consumption has negative impact on grades of the school?
+```{r}
+ggplot(mat_por_students,aes(x=weekday.alcohol.consumption,y=final.grade)) +
+  geom_point() + geom_smooth(method = 'lm')
+```
+```{r}
+ggplot(mat_por_students,aes(x=weekend.alcohol.consumption,y=final.grade)) +
+  geom_point() + geom_smooth(method = 'lm')
+```
+
+
+##### Observations:
+It can be illustrated that students who consume more alcohol, perform poor in examination.
+
+
+#### Different grades of school w.r.t to weekly alcohol consumption level consumption.
+```{r}
+boxplot1 <- ggplot(mat_por_students, aes(x=weekday.alcohol.consumption, y=first.period.grade, fill=weekday.alcohol.consumption))+
+  geom_boxplot(aes(group = weekday.alcohol.consumption))+
+  theme_test()+
+  xlab("Weekly Alcohol consumption")+
+  ylab("First period grade")+
+  ggtitle("First period grade") + theme(legend.position = "none")
+
+boxplot2 <- ggplot(mat_por_students, aes(x=weekday.alcohol.consumption, y=second.period.grade, fill=weekday.alcohol.consumption))+
+  geom_boxplot(aes(group = weekday.alcohol.consumption))+
+  theme_dark()+
+  xlab("Weekly Alcohol consumption")+
+  ylab("Second period grade")+
+  ggtitle("Second period grade") + theme(legend.position = "none")
+
+boxplot3 <- ggplot(mat_por_students, aes(x=weekday.alcohol.consumption, y=final.grade, fill=weekday.alcohol.consumption))+
+  geom_boxplot(aes(group = weekday.alcohol.consumption))+
+  theme_linedraw()+
+  xlab("Weekly Alcohol consumption")+
+  ylab("Final period grade")+
+  ggtitle("Final period grade") + theme(legend.position = "none")
+
+grid.arrange(boxplot1, boxplot2, boxplot3, ncol = 3,top=textGrob("Weekly Alcohol consumption level VS Grades ",gp=gpar(fontsize=10,font=4))
+)
+```
+
+#### Observations: 
+It can be clearly observed that as weekly alcohol consumption increases, performance of student decreases.
+
+
+#### Different grades of school w.r.t to weekend alcohol consumption level consumption.
+```{r}
+boxplot1 <- ggplot(mat_por_students, aes(x=weekend.alcohol.consumption, y=first.period.grade, fill=weekend.alcohol.consumption))+
+  geom_boxplot(aes(group = weekend.alcohol.consumption))+
+  theme_test()+
+  xlab("Weekend Alcohol consumption")+
+  ylab("First period grade")+
+  ggtitle("First period grade") + theme(legend.position = "none")
+
+boxplot2 <- ggplot(mat_por_students, aes(x=weekend.alcohol.consumption, y=second.period.grade, fill=weekend.alcohol.consumption))+
+  geom_boxplot(aes(group = weekend.alcohol.consumption))+
+  theme_dark()+
+  xlab("Weekend Alcohol consumption")+
+  ylab("Second period grade")+
+  ggtitle("Second period grade") + theme(legend.position = "none")
+
+boxplot3 <- ggplot(mat_por_students, aes(x=weekend.alcohol.consumption, y=final.grade, fill=weekend.alcohol.consumption))+
+  geom_boxplot(aes(group = weekend.alcohol.consumption))+
+  theme_linedraw()+
+  xlab("Weekend Alcohol consumption")+
+  ylab("Final period grade")+
+  ggtitle("Final period grade") + theme(legend.position = "none")
+
+grid.arrange(boxplot1, boxplot2, boxplot3, ncol = 3,top=textGrob("Weekend Alcohol consumption level VS Grades ",gp=gpar(fontsize=10,font=4))
+)
+```
+
+#### Observations: 
+It can be clearly observed that as weekend alcohol consumption increases, performance of student decreases.
+
+##### Does freetime increases alcohol consumption of students? 
+```{r}
+weekly_alc_freetime = ggplot(mat_por_students,aes(x=weekday.alcohol.consumption,y=freetime)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekly alcohol consumption level v.s freetime")
+
+weekend_alc_freetime = ggplot(mat_por_students,aes(x=weekend.alcohol.consumption,y=freetime)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekend alcohol consumption level v.s freetime")
+
+grid.arrange(weekly_alc_freetime, weekend_alc_freetime , ncol = 2,top=textGrob("Alcohol consumption level VS freetime ",gp=gpar(fontsize=10,font=4))
+)
+
+```
+
+#### Observations:
+
+1. It can be determined that when student has more freetime, they can drink more alcohol.
+
+#### Does going out with friends increases the tendency of student to drink alcohol?
+
+```{r}
+weekly_alc_going_out = ggplot(mat_por_students,aes(x=weekday.alcohol.consumption,y=going.out.with.friends)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekly alcohol consumption level v.s going out with friends")
+
+weekend_alc_going_out = ggplot(mat_por_students,aes(x=weekend.alcohol.consumption,y=going.out.with.friends)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekend alcohol consumption level v.s going out with friends")
+
+grid.arrange(weekly_alc_going_out, weekend_alc_going_out , ncol = 2,top=textGrob("Alcohol consumption level VS going out with friends ",gp=gpar(fontsize=10,font=4))
+)
+
+```
+
+#### Observations:
+It can be observed that going out with friends increases the alcohol consumption level of students for both weekend and weekdays.
+
+#### Is there a correlation between studytime and alcohol consumption?
+```{r}
+weekday_alc_study_time = ggplot(mat_por_students,aes(x=weekday.alcohol.consumption,y=studytime)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekend alcohol consumption level v.s going out with friends")
+
+weekend_alc_study_time = ggplot(mat_por_students,aes(x=weekend.alcohol.consumption,y=studytime)) +
+  geom_point() + geom_smooth(method = 'lm') + ggtitle("Weekend alcohol consumption level v.s going out with friends")
+
+grid.arrange(weekday_alc_study_time, weekend_alc_study_time , ncol = 2,top=textGrob("Alcohol consumption level VS studytime ",gp=gpar(fontsize=10,font=4))
+)
+
+```
+
+#### Observations:
+It can be observed that alcohol consumption and studytime have negative correlation, i.e students studytime decreases, alcohol consumtion increases.
+
+
+
+From above all factors, we found out that, studytime, freetime, going out with friend, address, family relations and student grades have significant impact on the alcohol consumption habit of students. Let us build a linear regression model to describe their correlation. 
+
+
+##### Identify the most cor-related variables to Daily alcohol consumption level using linear regression model.
+
+###### Linear regression model for weekday alcohol consumption levels.
+```{r}
+weekly_alcohol_consumption_survey = lm(weekday.alcohol.consumption~., data= mat_por_students)
+coef(weekly_alcohol_consumption_survey)
+```
+
+```{r}
+summary(weekly_alcohol_consumption_survey)
+```
+
+#### Observations:
+Since all of the p-values are less than 0.05, we should rule out the null hypothesis that the coefficient is zero for each variable. All variables aren't entirely irrelevant to alcohol intake on weekdays.
+Regression Model= 5.82e-05+5.07e-11*schoolMS+(-2e-16)*genderM+4.69e-07*age+.015*AddressU+.022*StudyTime+.013*ExtraCurcActiv.+.017*Freetime(-2e-16)*GoingoutwithFriends+(-2e-16)*Weekend Alcohol Consumption
+
+
+###### Linear regression model for weekend alcohol consumption levels.
+```{r}
+weekend_alcohol_consumption_survey = lm(weekend.alcohol.consumption~., data= mat_por_students)
+coef(weekend_alcohol_consumption_survey)
+
+```
+
+```{r}
+summary(weekend_alcohol_consumption_survey)
+```
+
+##### Observations:
+
+1. Weekday alcohol intake is better explained by the amount at which students go out. Holding all other factors unchanged, a one-unit rise in going out results in a 0.175 increase in weekday alcohol intake. Although weekday alcohol intake is positively associated with frequency of going out, amount of free time, and fitness when all other variables are held stable, the nature of family relationships is negatively correlated with the response variable. The more they went out, the more alcohol they drank (which is equivalent to how much spare time they had and how healthy they were), but the healthier their family relationships were, the less alcohol they drank.
+
+2.  For weekend alcohol consumption, family relationships, studytime and going out with friends are observed to be more significant variables.
+
+
+
+#### Q2. Identify the Factors Impacting Student Performance.
+
+#### Male vs Female students that failed in examination
+```{r}
+ggplot(mat_por_students,aes(x=gender,y=past.class.failures,fill=gender))+
+  geom_bar(stat="identity")+ggtitle("Number of males versus females who failed in the final examination")
+```
+```{r}
+table(mat_por_students$past.class.failures,mat_por_students$gender)
+```
+
+```{r}
+table(mat_por_students$age,mat_por_students$past.class.failures)
+```
+
+
+#### Barplot to describe past failures of students in school. 
+```{r}
+
+ggplot(aes(x = failures), data = mat_por_students )  + geom_bar(aes(fill = gender)) + ggtitle("Past failures of students")
+```
+
+#### Impact of failures on final grades of students
+```{r}
+plot(x=failures, y=mat_por_students$final.grade, xlab = "Failures", ylab = "Rank", col = "green")
+```
+
+```{r}
+cor(mat_por_students$final.grade, mat_por_students$past.class.failures)
+```
+
+#### Observations:
+1. From above, we can illustrate that, Females have less number of failures as compared to Males.
+2. Maximum students have not failed in their previous examinations.
+3. There is a negative correlation between past failures and grades of examination, i.e if student has more failures, the average grade of students is also less.
+
+
+##### Does extra-school support help students get good grades in school?
+
+```{r}
+ggplot(data = mat_por_students,aes(x = extra.school.support,y=final.grade,fill=extra.school.support))+
+  geom_boxplot(show.legend = F) + labs(x="Extra Educational Support",y="Final Score")+ ggtitle("Extra Educational Support and Final Grade")
+```
+
+#### Observations:
+
+Surprisingly, from above diagram, it can be illustrated that students who have got extra school support have scored less as compared to other students who got extra support from school.
+
+
+#### Boxplot used to analyse the relation between type of address and final grades of the students
+```{r}
+ggplot(data= mat_por_students, aes(x=address, y=final.grade,fill=address))+
+  geom_boxplot() + geom_boxplot(show.legend = F) + labs(x="Address U: Urban, R: Rural",y="Final Score") + scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+ ggtitle("Rural/Urban Living Area in relation to Final Grades")
+```
+
+#### Observation:
+In comparison to rural students, urban students appear to perform better.
+
+#### Does internet access at home, helps students to perform better in their exam?
+
+```{r}
+mat_por_students%>% 
+  group_by(internet.access)%>%
+  ggplot(aes(x=final.grade, fill=internet.access))+
+  geom_density(alpha=0.5)+ ggtitle("Internet Access and Final Grade")
+```
+
+#### Observation:
+1. Having internet access at home, helps students to achieve good grades
+2. Most of the students have internet connections at home and the failures are also less for such students.
+
+
+#### Average Final Score across different weekend and weekday alcohol consumption levels
+```{r}
+mat_por_students%>% group_by(weekday.alcohol.consumption)%>% aggregate(final.grade~weekday.alcohol.consumption, data=., mean)%>%
+  arrange(desc(final.grade))
+```
+```{r}
+mat_por_students%>%
+   group_by(weekend.alcohol.consumption)%>%
+   aggregate(final.grade~weekend.alcohol.consumption, data=., mean)%>%
+   arrange(desc(final.grade))
+```
+
+#### Observations:
+1. We can conclude from above tables that final grades tend to decrease when alcohol consumption increase for both in weekdays and weekends.
+
+#### Does student's relationship status have any effect on their grades?
+```{r}
+ggplot(data = mat_por_students,aes(x=final.grade))+ geom_bar(aes(fill=romantic.relationship),alpha=.9)+ labs(y="Proportion",x="Final Grade")
+```
+
+#### Observation:
+The percentage of students in love relationships is lower than the number of students who are not in love relationships. The distribution of final grades among students, whether in love or not, is very similar in the diagram above, but high final grades appear to be owned by those students who are not in a romantic relationship.
+
+#### Relationship between going out and average grade of the students
+```{r}
+mat_por_students$going.out.with.friends.factor <- as.factor(mat_por_students$going.out.with.friends)
+mat_por_students%>%
+   group_by(going.out.with.friends.factor)%>%
+   summarise(AverageScore= mean(final.grade))%>%
+  arrange(desc(going.out.with.friends.factor
+))
+```
+
+#### Observation:
+It is observed that going out with friends has an impact on average score of students. As going out friends increases above 3, it decreases the average score of students.
+
+
+#### Do students who desire to take higher education, perform better in exam?
+```{r}
+ggplot(data = mat_por_students,aes(x=final.grade))+
+  geom_density(aes(fill=higher.education))+ labs(y="Frequency",x="Final Score")+ scale_color_grey() + theme_classic()+ ggtitle("Student Performance and the want for Higher Education")
+```
+
+#### Observations:
+It can be observed that, the students who desire to take higher education perform well in their examination as compared the other students.
+
+#### Studytime w.r.t to final grade
+```{r}
+plot(x=mat_por_students$studytime, y=mat_por_students$final.grade, xlab = "Study time", ylab = "Final grade", col = "brown")
+```
+
+#### Correlation between Study time and Final grade of students.
+```{r}
+cor(mat_por_students$studytime,mat_por_students$final.grade)
+```
+From above graph and correlation, we can illustrate that Study time can have some effect on final grade, but not very strong.
+
+
+##### Impact of mother's job in final grades
+```{r}
+ggplot(mat_por_students, aes(x="", y=mothers.job, fill=mothers.job)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0)
+```
+```{r}
+ggplot(data= mat_por_students, aes(x=mothers.job, y=final.grade,fill=mothers.job))+
+ geom_boxplot(show.legend = F)
+```
+
+#### Observations:
+1. It can be observed that most of the students whose mother work in health sector and work as teacher perform good on average as compared to other students.
+2. As compared to others, a student whose mother is at home, gets less marks as compared to other students.
+
+#### How does travelling affects the student performance?
+
+```{r}
+ggplot(mat_por_students, aes(x=traveltime, y=final.grade)) + 
+  geom_point()+ geom_density_2d()+
+  geom_smooth(method=lm)+ ggtitle("Travel Time to School and Final Grade")
+```
+
+#### Observations:
+
+1. It can be observed that student who travels less tends to perform better in school.
+
+
+#### Does extra paid classes helps students to perform better in school?
+```{r}
+mat_por_students%>% group_by(extra.paid.classes)%>% aggregate(final.grade~extra.paid.classes, data=., mean)%>%
+  arrange(desc(final.grade))
+```
+
+#### Observations: 
+Surprisingly, students who havent taken extra paid classes, perform better than those who have taken extra paid classes. 
+
+
+#### Divide data into training and testing dataset.
+
+80% of data will be training data set and 20% will be testing dataset.
+```{r}
+set.seed (199)
+trainindex=sample(nrow(mat_por_students),nrow(mat_por_students)*.8)
+train_data <- mat_por_students[trainindex, ]
+test_data <- mat_por_students[-trainindex, ]
+str(train_data)
+str(test_data)
+```
+
+
+
+#### Linear regression model to understand the relation beteween previous grades contribute and final grade of student?
+```{r}
+student_grade_model_1 = lm(final.grade ~ first.period.grade + second.period.grade, data = train_data)
+summary(student_grade_model_1)
+```
+
+#### Observations:
+In the above model, it can be observed that p-value : < 2.2e-16 which is smaller than 0.05. It means that either of above independent variables is highly correlated to the dependent variable, i.e final grade of students.
+It can be noted that first period grade and second period grade is significantly associated with the final grade.
+can determine that students who perform well on first will do better on second and final grade
+
+##### Linear regression model to understand relation between total alcohol consumption, studytime and final grades of students.
+```{r}
+studytime_walc_model = lm(final.grade ~ studytime + total_alcohol_consumption , data = train_data)
+summary(studytime_walc_model)
+```
+
+```{r}
+grade_model <- lm(final.grade ~ past.class.failures+studytime+higher.education+extra.school.support+internet.access+going.out.with.friends+romantic.relationship,data = train_data)
+summary(grade_model)
+```
+
+#### Linear regression model for all the independent variables with final grade obtained by students.
+```{r}
+model =lm(final.grade~., data= train_data)
+summary(model)
+
+```
+
+#### Observations:
+1. From above regression model, we got R square value = 0.84 which is 84%.
+2. We can observe that p-value is less than 0.05 for the variables : traveltime , past.class.failures, extra.paid.classesyes, school.absences ,first.period.grade, second.period.grade, weekday.alcohol.consumption, weekend.alcohol.consumption.
+
+
+```{r}
+test_data$final.grade.predicted <- predict(object = model,newdata = test_data)
+test_data$final.grade
+test_data$final.grade.predicted
+```
+
+
+#### Performance of linear regression model using RMSE (Root mean square error)
+```{r}
+# RMSE = Computes to the average difference between actual and predicted value.
+rmse = sqrt(mean((test_data$final.grade - test_data$final.grade.predicted)^2) )
+rmse
+```
+
+#### Standard error rate of the model
+```{r}
+# Standard error rate of model = rmse/mean(actual dependent value) * 100
+std_error_rate_lm = rmse/mean(test_data$final.grade)*100
+std_error_rate_lm
+```
+
+#### Observations:
+From above we can make out that our RMSE value is 1.6 representing an error rate of 13%, which is good also r-square value for the linear regression model is 82%.
+
+
+### Q3. Analysis of grades and alcohol consumption between 2 classes i.e Math and Portugese class.
+
+```{r}
+
+math_grades <- mat_students %>%
+  gather(`first.period.grade`, `second.period.grade`, `final.grade`, key="semester", value="grade") %>%
+  ggplot() +
+  geom_bar(aes(x=grade, fill=semester), position="dodge") + 
+  ggtitle("Distribution of three grades in Math")
+
+por_grades <- por_students %>%
+  gather(`first.period.grade`, `second.period.grade`, `final.grade`, key="semester", value="grade") %>%
+  ggplot() +
+  geom_bar(aes(x=grade, fill=semester), position="dodge") + 
+  ggtitle("Distribution of three grades in Portuguese")
+
+grid.arrange(math_grades,por_grades)
+
+```
+
+#### Average of final grades for students in Math class
+```{r}
+mean(mat_students$final.grade)
+```
+
+#### Average of final grades for students in Portugese class
+```{r}
+mean(por_students$final.grade)
+```
+
+#### Observations:
+From above graph, we can illustrate that there is not much difference grades of student in both the classes. But we can see that there were more number of students who scored 0 in final exam for Math class as compared to Portuguese class. 
+Also, average grades of students is more for Portuguese class in comparison with Math class.
+
+
+##### Distribution of students grades by school
+
+```{r}
+math_school_grades <- ggplot(mat_students) +
+  geom_bar(aes(x=school, fill=as.factor(final.grade)), position="dodge") +
+  ggtitle("Maths grades by school") +
+  theme(legend.position = "none")
+
+port_school_grades <- ggplot(por_students) +
+  geom_bar(aes(x=school, fill=as.factor(final.grade)), position="dodge") +
+  ggtitle("Portuguese grades by school") + 
+  theme(legend.position = "none")
+
+grid.arrange(math_school_grades, port_school_grades)
+
+```
+
+#### Observations:
+Similar trends can be observed in both the classes, but average grades of Gabriel Pereira (GP) school is more that the Mousinho da Silveira (MS) school.
+
+###### Find school names and replace it with the statement above.
+
+```{r}
+math_school_grades <- ggplot(mat_students, aes(x=final.grade)) +geom_density(aes(color=school),linetype = "dashed", size = 0.7) +
+  ggtitle("Maths students' grades by school")+
+  scale_color_manual(values = c("#868686FF", "#EFC000FF"))+
+  scale_fill_manual(values = c("#868686FF", "#EFC000FF"))
+
+
+port_school_grades <- ggplot(por_students, aes(x=final.grade)) +
+  geom_density(aes(color=school),linetype = "dashed", size = 0.7) +
+  ggtitle("Portuguese students grades by school")+
+  scale_color_manual(values = c("#868686FF", "#EFC000FF"))+
+  scale_fill_manual(values = c("#868686FF", "#EFC000FF"))
+
+grid.arrange(math_school_grades, port_school_grades)
+```
+
+#### Observations:
+It can be observed a similar trend for Math class in both the schools, but students from GP school are seen outperfoming as compared to MS school in Portuguese class.
+
+
+
+
+#### Observations:
+Students living in urban areas tend to perform well as compared with the rural areas in both Math and Portuguese class.
+
+#### Distribution of students grades w.r.t to their alcohol consumption
+
+```{r}
+mat_alcohol_level = ggplot(mat_students, aes(x=weekday.alcohol.consumption)) +
+  geom_density(aes(color=school),linetype = "dashed", size = 0.7) +
+  ggtitle("Maths students grades by school")+
+  scale_color_manual(values = c("#868686FF", "#EFC000FF"))+
+  scale_fill_manual(values = c("#868686FF", "#EFC000FF"))
+
+port_alcohol_level = ggplot(por_students, aes(x=weekday.alcohol.consumption)) +
+  geom_density(aes(color=school),linetype = "dashed", size = 0.7) +
+  ggtitle("Portuguese students grades by school")+
+  scale_color_manual(values = c("#868686FF", "#EFC000FF"))+
+  scale_fill_manual(values = c("#868686FF", "#EFC000FF"))
+
+grid.arrange(mat_alcohol_level,port_alcohol_level)
+
+```
+
+#### Alcohol consumption level of Maths and Portuguese students
+
+```{r}
+# Calculate total alcohol consumption for Math and Portuguese class
+mat_students$total.alcohol.consumption = rowSums(cbind(mat_students$weekday.alcohol.consumption, mat_students$weekend.alcohol.consumption))
+
+por_students$total.alcohol.consumption = rowSums(cbind(por_students$weekday.alcohol.consumption, por_students$weekend.alcohol.consumption))
+```
+
+#### Total alcohol consumption level for Math class
+
+```{r}
+hist(mat_students$weekday.alcohol.consumption, main="Alcoholic Beverages Consumed on Weekdays by Math class",xlab="Students", border="blue", col="purple",ylab="Weekely alcohol frequency")
+```
+
+
+```{r}
+hist(mat_students$weekend.alcohol.consumption, main="Alcoholic Beverages Consumed on Weekends by Math class",xlab="Students", border="blue", col="purple",ylab="Weekely alcohol frequency")
+```
+
+
+
+
+#### Total alcohol consumption level for Portuguese class
+
+```{r}
+hist(por_students$weekday.alcohol.consumption, main="Alcoholic Beverages Consumed on Weekdays by Portuguese class",xlab="Students", border="blue", col="green",ylab="Weekely alcohol frequency")
+```
+
+```{r}
+hist(por_students$weekend.alcohol.consumption, main="Alcoholic Beverages Consumed on Weekends by Portugueseclass",xlab="Students", border="blue", col="green",ylab="Weekely alcohol frequency")
+```
+
+
+#### Mean weekly alcohol consumption level of Math students
+```{r}
+mean(mat_students$weekday.alcohol.consumption)
+```
+
+#### Mean weekend alcohol consumption level of Math students
+```{r}
+mean(mat_students$weekend.alcohol.consumption)
+```
+
+
+#### Mean weekly alcohol consumption level of Portuguese students
+```{r}
+mean(por_students$weekday.alcohol.consumption)
+```
+
+
+#### Mean weekend alcohol consumption level of Portuguese students
+```{r}
+mean(por_students$weekend.alcohol.consumption)
+```
+Alcohol consumption level for both the classes tend to be similar for both during weekdays and weekends.
+
+
+#### What is the grades of both the classes w.r.t their family relations?
+```{r}
+math_class_family <- ggplot(mat_students, aes(x=final.grade)) +
+  geom_density(aes(color=as.factor(quality.of.family.relationships))) +
+  ggtitle("Maths students grades by family relationships")
+
+port_class_family <- ggplot(por_students, aes(x=final.grade)) +
+  geom_density(aes(color=as.factor(quality.of.family.relationships))) +
+  ggtitle("Portuguese students grades by family relationships")
+
+grid.arrange(math_class_family, port_class_family)
+```
+
+#### Observations:
+Surprisingly, students with the poorest family relationships had a higher overall math score than students with stronger relationships. Portuguese, on the other hand, is the exact opposite.
+
+
+#### Conclusion:
+
+Based off the data analysis we have concluded that weekday student alcohol consumption is correlated with the amount of freetime a student has, the amount of time they study, how often they go out with their friends, the quality of their family relationships, and weekend alcohol consumption. This information can be useful for the secondary school in that they can create after school programs, provide counseling services, to try to minimize the amount of freetime students have that can lead to alcohol consumption. Additionally, since weekday and weekend consumption is statistically significant to one another parent scan focus on ways to reduce weekday consumption by providing better guidance and better activities for students during their freetime. 
+
+Next, based off our data analysis on student performance we can conclude that past class failures, school absences, first period grade, second period grade, extra curricular activities and educational support from family are statistically significant to the students final grade. This will allow the school to focus their attention on the material that students need most help on so that they can achieve better grades. 
+
+Lastly, after reviewing the difference between performance in both classes our data analysis shows that students from the Portuguese language class on average obtained better grades than the Math class. However, both classes consumed about the same amount number of alcoholic beverages during the week and both classes showed an increase over the weekend. 
+
+In conclusion school administrators can use this information to create more opportunities for after-school activities, and provide better tutoring services to students who fall behind at the start of the period. 
+
